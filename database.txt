@@ -1,0 +1,123 @@
+CREATE DATABASE demois;
+USE demois;
+
+CREATE TABLE roles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    r_name VARCHAR(50) UNIQUE
+);
+
+CREATE TABLE take_points (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    post_code INT,
+    city VARCHAR(100),
+    street VARCHAR(100),
+    num_house VARCHAR(10)
+);
+
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    u_name VARCHAR(100) NOT NULL,
+    surname VARCHAR(100) NOT NULL,
+    patronymic VARCHAR(100) NOT NULL,
+    email VARCHAR(200) UNIQUE,
+    u_password VARCHAR(180),
+    role_id INT,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+
+CREATE TABLE brends (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    b_name VARCHAR(100) UNIQUE
+);
+
+CREATE TABLE suppliers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    s_name VARCHAR(100) UNIQUE
+);
+
+CREATE TABLE categories (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    category_name VARCHAR(50) UNIQUE
+);
+
+CREATE TABLE products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    article VARCHAR(20) UNIQUE,
+    p_name VARCHAR(100),
+    ed_izmer VARCHAR(10) DEFAULT 'шт.',
+    price DECIMAL(10,2) NOT NULL CHECK (price > 0),
+    discount_percent INTEGER DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
+    quantity INT,
+    description TEXT,
+    image_path VARCHAR(255), -- Изменено с BLOB на путь к файлу
+    category_id INT,
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    brend_id INT,
+    FOREIGN KEY (brend_id) REFERENCES brends(id),
+    supplier_id INT,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+);
+
+CREATE TABLE orders (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_date DATE,
+    delivery_date DATE,
+    pickup_point_id INT,
+    FOREIGN KEY (pickup_point_id) REFERENCES take_points(id),
+    client_id INT,
+    FOREIGN KEY (client_id) REFERENCES users(id),
+    receipt_code INT UNIQUE,
+    order_status ENUM('Новый', 'Завершен') DEFAULT 'Новый'
+);
+
+CREATE TABLE order_items (
+    order_id INT,
+    product_article VARCHAR(20),
+    quantity INT,
+    PRIMARY KEY (order_id, product_article),
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_article) REFERENCES products(article)
+);
+
+-- Добавляем роли согласно заданию
+INSERT INTO roles (r_name) VALUES
+('Администратор'),
+('Менеджер'),
+('Клиент');
+
+-- Добавляем тестовых пользователей для каждой роли
+INSERT INTO users (u_name, surname, patronymic, email, u_password, role_id) VALUES
+('Иван', 'Иванов', 'Иванович', 'admin@test.ru', '123', 1),
+('Петр', 'Петров', 'Петрович', 'manager@test.ru', '123', 2),
+('Сергей', 'Сергеев', 'Сергеевич', 'client@test.ru', '123', 3);
+
+-- Остальные INSERT остаются без изменений...
+-- Добавляем поставщиков если их нет
+INSERT IGNORE INTO suppliers (s_name) VALUES
+('Поставщик 1'),
+('Поставщик 2'),
+('Поставщик 3');
+
+-- Добавляем бренды если их нет
+INSERT IGNORE INTO brends (b_name) VALUES
+('Nike'),
+('Adidas'),
+('Puma'),
+('Converse');
+
+-- Добавляем категории если их нет
+INSERT IGNORE INTO categories (category_name) VALUES
+('Кроссовки'),
+('Туфли'),
+('Ботинки');
+
+-- Добавляем больше тестовых товаров с разными скидками и поставщиками
+INSERT INTO products (article, p_name, price, quantity, discount_percent, category_id, brend_id, supplier_id, description) VALUES
+('ART001', 'Кроссовки Nike Air Max', 12000.00, 10, 10, 1, 1, 1, 'Спортивные кроссовки для бега'),
+('ART002', 'Кроссовки Adidas Ultraboost', 15000.00, 0, 20, 1, 2, 2, 'Ультралегкие беговые кроссовки'),
+('ART003', 'Туфли кожаные классические', 8000.00, 5, 5, 2, 3, 3, 'Классические кожаные туфли'),
+('ART004', 'Ботинки зимние', 10000.00, 3, 25, 3, 1, 1, 'Теплые зимние ботинки'),
+('ART005', 'Кроссовки Puma RS-X', 9000.00, 8, 0, 1, 2, 2, 'Стильные повседневные кроссовки'),
+('ART006', 'Кеды Converse All Star', 5000.00, 15, 30, 1, 3, 3, 'Классические кеды'),
+('ART007', 'Туфли офисные', 7500.00, 0, 10, 2, 1, 1, 'Офисные туфли для делового стиля'),
+('ART008', 'Сапоги женские', 11000.00, 6, 15, 3, 2, 2, 'Элегантные женские сапоги');
